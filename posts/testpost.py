@@ -3,6 +3,7 @@ from vk_api.exceptions import VkApiError
 import time
 import json
 
+ERRORS = []
 
 def get_posts_from_group(vk, group_id, count=100):
     posts = []
@@ -22,9 +23,16 @@ def get_posts_from_group(vk, group_id, count=100):
 
         except VkApiError as e:
             print(f"Ошибка при запросе к API ВКонтакте: {e}")
+            ERRORS.append(group_id)
             break
     res_posts = posts[:count]
-    return [{'group_id': group_id, 'posts':[{'text': post['text'], 'likes': post['likes']['count']} for post in res_posts]}]
+    print(len(res_posts))
+    return [{'group_id': group_id,
+             'posts': [{'text': post['text'], 'likes': post['likes']['count']} for post in res_posts]}]
+
+
+with open('group_ids_new.txt', 'r') as file:
+    group_ids = list(map(int, file.readlines()))
 
 
 def main():
@@ -33,7 +41,7 @@ def main():
     vk_session = vk_api.VkApi(token=access_token)
     vk = vk_session.get_api()
 
-    group_ids = [62122883, 68123456]
+    # group_ids = [62122883, 68123456]
 
     all_posts = []
 
@@ -46,6 +54,11 @@ def main():
         json.dump(all_posts, f, ensure_ascii=False, indent=4)
 
     print(f"всего {len(all_posts)} постов")
+
+    if ERRORS:
+        with open('errors.txt', 'w', encoding='utf-8') as error_file:
+            for error_group_id in ERRORS:
+                error_file.write(str(error_group_id))
 
 
 if __name__ == "__main__":
